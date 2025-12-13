@@ -1,5 +1,8 @@
 import React, { useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { usePoseDetection } from '@/hooks/usePoseDetection';
+import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
+import { useAuth } from '@/contexts/AuthContext';
 import { ExerciseType, FormFeedback, FormQuality } from '@/types/pose';
 import { getExercise } from '@/lib/exercises';
 import CameraFeed from '@/components/CameraFeed';
@@ -8,7 +11,8 @@ import RepCounter from '@/components/RepCounter';
 import FormFeedbackPanel from '@/components/FormFeedbackPanel';
 import WorkoutTimer from '@/components/WorkoutTimer';
 import LoadingOverlay from '@/components/LoadingOverlay';
-import { Dumbbell, Sparkles, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dumbbell, Sparkles, Zap, History, LogIn, LogOut, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Index: React.FC = () => {
@@ -16,7 +20,13 @@ const Index: React.FC = () => {
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [formFeedback, setFormFeedback] = useState<FormFeedback | null>(null);
   const [formQuality, setFormQuality] = useState<FormQuality>('good');
+  const [workoutDuration, setWorkoutDuration] = useState(0);
+  const [formScores, setFormScores] = useState<number[]>([]);
+  
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const { saveWorkout } = useWorkoutHistory();
+  const navigate = useNavigate();
 
   const handleRepComplete = useCallback(
     (count: number) => {
@@ -33,6 +43,9 @@ const Index: React.FC = () => {
   const handleFormFeedback = useCallback((feedback: FormFeedback) => {
     setFormFeedback(feedback);
     setFormQuality(feedback.quality);
+    // Track form scores for averaging
+    const score = feedback.quality === 'good' ? 100 : feedback.quality === 'warning' ? 70 : 40;
+    setFormScores(prev => [...prev, score]);
   }, []);
 
   const { isLoading, error, pose, repState, startDetection, stopDetection, resetReps } =
@@ -58,6 +71,7 @@ const Index: React.FC = () => {
       setSelectedExercise(exercise);
       resetReps();
       setFormFeedback(null);
+      setFormScores([]);
     },
     [resetReps]
   );
@@ -66,11 +80,56 @@ const Index: React.FC = () => {
     setIsWorkoutActive((prev) => !prev);
   }, []);
 
-  const handleWorkoutReset = useCallback(() => {
+  const handleTimerUpdate = useCallback((seconds: number) => {
+    setWorkoutDuration(seconds);
+  }, []);
+
+  const handleWorkoutReset = useCallback(async () => {
+    // Save workout if user is logged in and has done reps
+    if (user && repState.count > 0 && workoutDuration > 0) {
+      const avgFormScore = formScores.length > 0 
+        ? formScores.reduce((a, b) => a + b, 0) / formScores.length 
+        : 0;
+      
+      // Estimate calories (rough estimate: 0.1 cal per rep * exercise multiplier)
+      const exerciseMultipliers: Record<ExerciseType, number> = {
+        'squats': 0.4,
+        'pushups': 0.3,
+        'bicep-curls': 0.15,
+        'lunges': 0.35
+      };
+      const caloriesBurned = repState.count * (exerciseMultipliers[selectedExercise] || 0.2);
+
+      const { error } = await saveWorkout({
+        exercise_type: selectedExercise,
+        total_reps: repState.count,
+        duration_seconds: workoutDuration,
+        calories_burned: caloriesBurned,
+        form_score: avgFormScore
+      });
+
+      if (!error) {
+        toast({
+          title: '💪 Workout saved!',
+          description: `${repState.count} ${selectedExercise.replace('-', ' ')} recorded.`,
+        });
+      }
+    }
+
     resetReps();
     setFormFeedback(null);
     setIsWorkoutActive(false);
-  }, [resetReps]);
+    setWorkoutDuration(0);
+    setFormScores([]);
+  }, [resetReps, user, repState.count, workoutDuration, formScores, selectedExercise, saveWorkout, toast]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: 'Signed out',
+      description: 'See you next time!',
+    });
+  };
 
   const exercise = getExercise(selectedExercise);
 
@@ -93,9 +152,37 @@ const Index: React.FC = () => {
               <p className="text-sm text-muted-foreground">Real-time AI-powered fitness coaching</p>
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30">
-            <Zap className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">AI Active</span>
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30">
+              <Zap className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">AI Active</span>
+            </div>
+            
+            {user ? (
+              <>
+                <Link to="/history">
+                  <Button variant="ghost" size="icon" className="relative">
+                    <History className="w-5 h-5" />
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                  <LogOut className="w-5 h-5" />
+                </Button>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground truncate max-w-[120px]">
+                    {user.email}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <LogIn className="w-4 h-4" />
+                  Sign In
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -136,6 +223,7 @@ const Index: React.FC = () => {
                 isActive={isWorkoutActive}
                 onToggle={handleWorkoutToggle}
                 onReset={handleWorkoutReset}
+                onTimeUpdate={handleTimerUpdate}
               />
             </div>
 

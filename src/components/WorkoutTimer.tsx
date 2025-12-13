@@ -6,20 +6,25 @@ interface WorkoutTimerProps {
   isActive: boolean;
   onToggle: () => void;
   onReset: () => void;
+  onTimeUpdate?: (seconds: number) => void;
 }
 
-const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ isActive, onToggle, onReset }) => {
+const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ isActive, onToggle, onReset, onTimeUpdate }) => {
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isActive) {
       interval = setInterval(() => {
-        setSeconds((prev) => prev + 1);
+        setSeconds((prev) => {
+          const newSeconds = prev + 1;
+          onTimeUpdate?.(newSeconds);
+          return newSeconds;
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isActive]);
+  }, [isActive, onTimeUpdate]);
 
   const formatTime = useCallback((totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -29,6 +34,7 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ isActive, onToggle, onReset
 
   const handleReset = () => {
     setSeconds(0);
+    onTimeUpdate?.(0);
     onReset();
   };
 
