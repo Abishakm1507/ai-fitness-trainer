@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePoseDetection } from '@/hooks/usePoseDetection';
 import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
+import { usePersonalRecords, PRComparison } from '@/hooks/usePersonalRecords';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExerciseType, FormFeedback, FormQuality } from '@/types/pose';
 import { getExercise } from '@/lib/exercises';
@@ -11,6 +12,7 @@ import RepCounter from '@/components/RepCounter';
 import FormFeedbackPanel from '@/components/FormFeedbackPanel';
 import WorkoutTimer from '@/components/WorkoutTimer';
 import LoadingOverlay from '@/components/LoadingOverlay';
+import PRCelebration from '@/components/PRCelebration';
 import { Button } from '@/components/ui/button';
 import { Dumbbell, Sparkles, Zap, History, LogIn, LogOut, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -22,11 +24,21 @@ const Index: React.FC = () => {
   const [formQuality, setFormQuality] = useState<FormQuality>('good');
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [formScores, setFormScores] = useState<number[]>([]);
+  const [prCelebration, setPrCelebration] = useState<PRComparison | null>(null);
   
   const { toast } = useToast();
   const { user, signOut } = useAuth();
-  const { saveWorkout } = useWorkoutHistory();
+  const { workouts, saveWorkout } = useWorkoutHistory();
+  const { checkForPRs } = usePersonalRecords(workouts);
   const navigate = useNavigate();
+
+  // Auto-dismiss PR celebration after 4 seconds
+  useEffect(() => {
+    if (prCelebration) {
+      const timer = setTimeout(() => setPrCelebration(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [prCelebration]);
 
   const handleRepComplete = useCallback(
     (count: number) => {
@@ -100,6 +112,9 @@ const Index: React.FC = () => {
       };
       const caloriesBurned = repState.count * (exerciseMultipliers[selectedExercise] || 0.2);
 
+      // Check for PRs before saving
+      const prComparison = checkForPRs(selectedExercise, repState.count, workoutDuration, avgFormScore);
+      
       const { error } = await saveWorkout({
         exercise_type: selectedExercise,
         total_reps: repState.count,
@@ -109,10 +124,20 @@ const Index: React.FC = () => {
       });
 
       if (!error) {
-        toast({
-          title: '💪 Workout saved!',
-          description: `${repState.count} ${selectedExercise.replace('-', ' ')} recorded.`,
-        });
+        const hasAnyPR = prComparison.isRepsRecord || prComparison.isDurationRecord || prComparison.isFormScoreRecord;
+        
+        if (hasAnyPR) {
+          setPrCelebration(prComparison);
+          toast({
+            title: '🏆 New Personal Record!',
+            description: `You beat your previous best for ${selectedExercise.replace('-', ' ')}!`,
+          });
+        } else {
+          toast({
+            title: '💪 Workout saved!',
+            description: `${repState.count} ${selectedExercise.replace('-', ' ')} recorded.`,
+          });
+        }
       }
     }
 
@@ -121,7 +146,7 @@ const Index: React.FC = () => {
     setIsWorkoutActive(false);
     setWorkoutDuration(0);
     setFormScores([]);
-  }, [resetReps, user, repState.count, workoutDuration, formScores, selectedExercise, saveWorkout, toast]);
+  }, [resetReps, user, repState.count, workoutDuration, formScores, selectedExercise, saveWorkout, toast, checkForPRs]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -136,6 +161,14 @@ const Index: React.FC = () => {
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8">
       <LoadingOverlay isLoading={isLoading} />
+      
+      {/* PR Celebration Overlay */}
+      {prCelebration && (
+        <PRCelebration 
+          prComparison={prCelebration} 
+          exerciseName={exercise?.name || selectedExercise} 
+        />
+      )}
 
       {/* Header */}
       <header className="max-w-7xl mx-auto mb-6 animate-fade-in">
