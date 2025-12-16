@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { usePoseDetection } from '@/hooks/usePoseDetection';
 import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
 import { usePersonalRecords, PRComparison } from '@/hooks/usePersonalRecords';
+import { useWorkoutGoals } from '@/hooks/useWorkoutGoals';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExerciseType, FormFeedback, FormQuality } from '@/types/pose';
 import { getExercise } from '@/lib/exercises';
@@ -29,6 +30,7 @@ const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
   const { workouts, saveWorkout } = useWorkoutHistory();
   const { checkForPRs } = usePersonalRecords(workouts);
+  const { goals, updateGoalProgress } = useWorkoutGoals();
 
   // Auto-dismiss PR celebration after 4 seconds
   useEffect(() => {
@@ -93,6 +95,44 @@ const Dashboard: React.FC = () => {
     setWorkoutDuration(seconds);
   }, []);
 
+  const updateGoals = useCallback(async (reps: number, duration: number) => {
+    for (const goal of goals) {
+      if (goal.is_completed) continue;
+      
+      let newValue = goal.current_value;
+      
+      switch (goal.goal_type) {
+        case 'weekly_workouts':
+          newValue = goal.current_value + 1;
+          break;
+        case 'weekly_reps':
+          newValue = goal.current_value + reps;
+          break;
+        case 'weekly_duration':
+          newValue = goal.current_value + Math.floor(duration / 60);
+          break;
+        case 'exercise_pr_reps':
+          if (goal.exercise_type === selectedExercise && reps > goal.current_value) {
+            newValue = reps;
+          }
+          break;
+        case 'exercise_pr_duration':
+          if (goal.exercise_type === selectedExercise && duration > goal.current_value) {
+            newValue = duration;
+          }
+          break;
+        case 'streak':
+          // Streak logic: increment if working out today
+          newValue = goal.current_value + 1;
+          break;
+      }
+      
+      if (newValue !== goal.current_value) {
+        await updateGoalProgress(goal.id, newValue);
+      }
+    }
+  }, [goals, selectedExercise, updateGoalProgress]);
+
   const handleWorkoutReset = useCallback(async () => {
     if (user && repState.count > 0 && workoutDuration > 0) {
       const avgFormScore = formScores.length > 0 
@@ -118,6 +158,9 @@ const Dashboard: React.FC = () => {
       });
 
       if (!error) {
+        // Update goals after saving workout
+        await updateGoals(repState.count, workoutDuration);
+        
         const hasAnyPR = prComparison.isRepsRecord || prComparison.isDurationRecord || prComparison.isFormScoreRecord;
         
         if (hasAnyPR) {
@@ -140,7 +183,7 @@ const Dashboard: React.FC = () => {
     setIsWorkoutActive(false);
     setWorkoutDuration(0);
     setFormScores([]);
-  }, [resetReps, user, repState.count, workoutDuration, formScores, selectedExercise, saveWorkout, toast, checkForPRs]);
+  }, [resetReps, user, repState.count, workoutDuration, formScores, selectedExercise, saveWorkout, toast, checkForPRs, updateGoals]);
 
   const exercise = getExercise(selectedExercise);
 

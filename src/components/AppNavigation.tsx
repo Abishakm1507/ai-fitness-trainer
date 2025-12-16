@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Dumbbell, Home, History, LogOut, User, Sparkles, Zap } from 'lucide-react';
+import { Dumbbell, Home, History, LogOut, User, Sparkles, Zap, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +21,7 @@ const AppNavigation: React.FC = () => {
 
   const navItems = [
     { to: '/dashboard', label: 'Workout', icon: Home },
+    { to: '/goals', label: 'Goals', icon: Target },
     { to: '/history', label: 'History', icon: History },
   ];
 

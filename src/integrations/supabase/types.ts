@@ -41,6 +41,48 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_goals: {
+        Row: {
+          created_at: string
+          current_value: number
+          end_date: string | null
+          exercise_type: string | null
+          goal_type: Database["public"]["Enums"]["goal_type"]
+          id: string
+          is_completed: boolean
+          start_date: string
+          target_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          end_date?: string | null
+          exercise_type?: string | null
+          goal_type: Database["public"]["Enums"]["goal_type"]
+          id?: string
+          is_completed?: boolean
+          start_date?: string
+          target_value: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          end_date?: string | null
+          exercise_type?: string | null
+          goal_type?: Database["public"]["Enums"]["goal_type"]
+          id?: string
+          is_completed?: boolean
+          start_date?: string
+          target_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       workout_sessions: {
         Row: {
           calories_burned: number | null
@@ -82,7 +124,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      goal_type:
+        | "weekly_workouts"
+        | "weekly_reps"
+        | "weekly_duration"
+        | "exercise_pr_reps"
+        | "exercise_pr_duration"
+        | "streak"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -209,6 +257,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      goal_type: [
+        "weekly_workouts",
+        "weekly_reps",
+        "weekly_duration",
+        "exercise_pr_reps",
+        "exercise_pr_duration",
+        "streak",
+      ],
+    },
   },
 } as const
