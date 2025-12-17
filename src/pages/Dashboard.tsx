@@ -17,6 +17,9 @@ import LoadingOverlay from '@/components/LoadingOverlay';
 import PRCelebration from '@/components/PRCelebration';
 import AppNavigation from '@/components/AppNavigation';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Volume2, VolumeX } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const [selectedExercise, setSelectedExercise] = useState<ExerciseType>('squats');
@@ -26,13 +29,16 @@ const Dashboard: React.FC = () => {
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [formScores, setFormScores] = useState<number[]>([]);
   const [prCelebration, setPrCelebration] = useState<PRComparison | null>(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   
   const { toast } = useToast();
   const { user, loading } = useAuth();
   const { workouts, saveWorkout } = useWorkoutHistory();
   const { checkForPRs } = usePersonalRecords(workouts);
   const { goals, updateGoalProgress } = useWorkoutGoals();
-  const { speakFeedback, stop: stopVoice } = useVoiceFeedback({ enabled: isWorkoutActive });
+  const { speakFeedback, stop: stopVoice, isSupported: voiceSupported } = useVoiceFeedback({ 
+    enabled: isWorkoutActive && voiceEnabled 
+  });
 
   // Auto-dismiss PR celebration after 4 seconds
   useEffect(() => {
@@ -251,6 +257,27 @@ const Dashboard: React.FC = () => {
                 onReset={handleWorkoutReset}
                 onTimeUpdate={handleTimerUpdate}
               />
+              
+              {/* Voice Feedback Toggle */}
+              {voiceSupported && (
+                <div className="flex items-center justify-between mt-4 p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    {voiceEnabled ? (
+                      <Volume2 className="h-4 w-4 text-primary" />
+                    ) : (
+                      <VolumeX className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <Label htmlFor="voice-toggle" className="text-sm cursor-pointer">
+                      Voice Feedback
+                    </Label>
+                  </div>
+                  <Switch
+                    id="voice-toggle"
+                    checked={voiceEnabled}
+                    onCheckedChange={setVoiceEnabled}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="animate-slide-in-right" style={{ animationDelay: '0.4s' }}>
