@@ -16,6 +16,7 @@ import WorkoutTimer from '@/components/WorkoutTimer';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import PRCelebration from '@/components/PRCelebration';
 import AppNavigation from '@/components/AppNavigation';
+import ExerciseTutorial from '@/components/ExerciseTutorial';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -247,6 +248,10 @@ const Dashboard: React.FC = () => {
 
           <div className="space-y-4">
             <div className="animate-slide-in-right" style={{ animationDelay: '0.2s' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-muted-foreground">Rep Counter</span>
+                <ExerciseTutorial exercise={selectedExercise} />
+              </div>
               <RepCounter repState={repState} exerciseName={exercise?.name || 'Exercise'} />
             </div>
 

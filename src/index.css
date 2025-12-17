@@ -184,3 +184,75 @@
     transform: translateY(-10px);
   }
 }
+
+/* Exercise Tutorial Animations */
+@keyframes squat-motion {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(30px);
+  }
+}
+
+@keyframes pushup-motion {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(15px) rotate(3deg);
+  }
+}
+
+@keyframes curl-motion {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-120deg);
+  }
+}
+
+@keyframes lunge-motion {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(25px);
+  }
+}
+
+.animate-squat-figure {
+  animation: squat-motion 2s ease-in-out infinite;
+}
+
+.animate-pushup-figure {
+  animation: pushup-motion 2s ease-in-out infinite;
+  transform-origin: 220px 65px;
+}
+
+.animate-pushup-head {
+  animation: pushup-motion 2s ease-in-out infinite;
+}
+
+.animate-pushup-body {
+  animation: pushup-motion 2s ease-in-out infinite;
+}
+
+.animate-pushup-arm {
+  animation: pushup-motion 2s ease-in-out infinite;
+}
+
+.animate-curl-forearm {
+  animation: curl-motion 2s ease-in-out infinite;
+  transform-origin: 105px 85px;
+}
+
+.animate-curl-weight {
+  animation: curl-motion 2s ease-in-out infinite;
+  transform-origin: 105px 85px;
+}
+
+.animate-lunge-figure {
+  animation: lunge-motion 2s ease-in-out infinite;
+}
