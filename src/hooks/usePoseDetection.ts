@@ -377,12 +377,14 @@ export const usePoseDetection = ({
         }
       }
 
-      // Count reps based on phase transitions
-      if (lastPhaseRef.current === 'down' && currentPhase === 'up') {
-        repCountRef.current += 1;
-        onRepComplete?.(repCountRef.current);
+      // Count reps based on phase transitions (ignore neutral to avoid breaking transitions)
+      if (currentPhase !== 'neutral') {
+        if (lastPhaseRef.current === 'down' && currentPhase === 'up') {
+          repCountRef.current += 1;
+          onRepComplete?.(repCountRef.current);
+        }
+        lastPhaseRef.current = currentPhase;
       }
-      lastPhaseRef.current = currentPhase;
 
       setRepState({
         phase: currentPhase,
