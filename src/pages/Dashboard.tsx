@@ -4,6 +4,7 @@ import { usePoseDetection } from '@/hooks/usePoseDetection';
 import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
 import { usePersonalRecords, PRComparison } from '@/hooks/usePersonalRecords';
 import { useWorkoutGoals } from '@/hooks/useWorkoutGoals';
+import { useVoiceFeedback } from '@/hooks/useVoiceFeedback';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExerciseType, FormFeedback, FormQuality } from '@/types/pose';
 import { getExercise } from '@/lib/exercises';
@@ -31,6 +32,7 @@ const Dashboard: React.FC = () => {
   const { workouts, saveWorkout } = useWorkoutHistory();
   const { checkForPRs } = usePersonalRecords(workouts);
   const { goals, updateGoalProgress } = useWorkoutGoals();
+  const { speakFeedback, stop: stopVoice } = useVoiceFeedback({ enabled: isWorkoutActive });
 
   // Auto-dismiss PR celebration after 4 seconds
   useEffect(() => {
@@ -57,7 +59,12 @@ const Dashboard: React.FC = () => {
     setFormQuality(feedback.quality);
     const score = feedback.quality === 'good' ? 100 : feedback.quality === 'warning' ? 70 : 40;
     setFormScores(prev => [...prev, score]);
-  }, []);
+    
+    // Announce form corrections via voice
+    if (isWorkoutActive) {
+      speakFeedback(feedback);
+    }
+  }, [isWorkoutActive, speakFeedback]);
 
   const { isLoading, error, pose, repState, startDetection, stopDetection, resetReps } =
     usePoseDetection({
@@ -134,6 +141,8 @@ const Dashboard: React.FC = () => {
   }, [goals, selectedExercise, updateGoalProgress]);
 
   const handleWorkoutReset = useCallback(async () => {
+    stopVoice(); // Stop any ongoing voice feedback
+    
     if (user && repState.count > 0 && workoutDuration > 0) {
       const avgFormScore = formScores.length > 0 
         ? formScores.reduce((a, b) => a + b, 0) / formScores.length 
@@ -183,7 +192,7 @@ const Dashboard: React.FC = () => {
     setIsWorkoutActive(false);
     setWorkoutDuration(0);
     setFormScores([]);
-  }, [resetReps, user, repState.count, workoutDuration, formScores, selectedExercise, saveWorkout, toast, checkForPRs, updateGoals]);
+  }, [resetReps, user, repState.count, workoutDuration, formScores, selectedExercise, saveWorkout, toast, checkForPRs, updateGoals, stopVoice]);
 
   const exercise = getExercise(selectedExercise);
 
