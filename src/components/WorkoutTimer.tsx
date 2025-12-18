@@ -33,9 +33,9 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ isActive, onToggle, onReset
   }, []);
 
   const handleReset = () => {
+    onReset();
     setSeconds(0);
     onTimeUpdate?.(0);
-    onReset();
   };
 
   return (
