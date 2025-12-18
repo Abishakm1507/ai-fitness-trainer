@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
@@ -6,12 +6,79 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { AreaChart, Area, XAxis, YAxis, BarChart, Bar } from 'recharts';
-import { Dumbbell, Flame, Clock, Target, TrendingUp, Loader2 } from 'lucide-react';
+import { Dumbbell, Flame, Clock, Target, TrendingUp, Loader2, Zap } from 'lucide-react';
 import AppNavigation from '@/components/AppNavigation';
 
 const History: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { workouts, loading, getStats, getChartData } = useWorkoutHistory();
+
+  // Calculate daily streak
+  const streakData = useMemo(() => {
+    if (workouts.length === 0) return { currentStreak: 0, longestStreak: 0, lastWorkoutDate: null };
+
+    // Get unique workout dates (sorted descending)
+    const workoutDates = [...new Set(
+      workouts.map(w => new Date(w.created_at).toDateString())
+    )].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+    let checkDate = new Date(today);
+
+    // Check if worked out today or yesterday to start counting
+    const lastWorkoutDateStr = workoutDates[0];
+    const lastWorkoutDate = new Date(lastWorkoutDateStr);
+    lastWorkoutDate.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor((today.getTime() - lastWorkoutDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 1) {
+      // Start from the last workout date
+      checkDate = new Date(lastWorkoutDate);
+      
+      for (let i = 0; i < workoutDates.length; i++) {
+        const workoutDate = new Date(workoutDates[i]);
+        workoutDate.setHours(0, 0, 0, 0);
+        
+        const expectedDate = new Date(checkDate);
+        expectedDate.setDate(expectedDate.getDate() - i);
+        
+        if (workoutDate.getTime() === expectedDate.getTime()) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Calculate longest streak
+    for (let i = 0; i < workoutDates.length; i++) {
+      if (i === 0) {
+        tempStreak = 1;
+      } else {
+        const prevDate = new Date(workoutDates[i - 1]);
+        const currDate = new Date(workoutDates[i]);
+        const diff = Math.floor((prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (diff === 1) {
+          tempStreak++;
+        } else {
+          longestStreak = Math.max(longestStreak, tempStreak);
+          tempStreak = 1;
+        }
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak);
+
+    return { currentStreak, longestStreak, lastWorkoutDate: lastWorkoutDateStr };
+  }, [workouts]);
 
   if (authLoading || loading) {
     return (
@@ -51,6 +118,35 @@ const History: React.FC = () => {
       </div>
 
       <main className="max-w-7xl mx-auto space-y-6">
+        {/* Streak Card */}
+        <Card className="glass-card border-border/50 animate-fade-in bg-gradient-to-r from-primary/10 to-accent/10">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-warning/20 flex items-center justify-center">
+                  <Zap className="w-8 h-8 text-warning" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-foreground">{streakData.currentStreak} day{streakData.currentStreak !== 1 ? 's' : ''}</p>
+                  <p className="text-sm text-muted-foreground">Current Streak</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-semibold text-foreground">{streakData.longestStreak} days</p>
+                <p className="text-xs text-muted-foreground">Longest Streak</p>
+              </div>
+            </div>
+            {streakData.currentStreak === 0 && workouts.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-3">
+                Last workout: {streakData.lastWorkoutDate ? new Date(streakData.lastWorkoutDate).toLocaleDateString() : 'N/A'} — Start a new streak today!
+              </p>
+            )}
+            {streakData.currentStreak > 0 && (
+              <p className="text-xs text-success mt-3">🔥 Keep it up! Don't break your streak!</p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <Card className="glass-card border-border/50">
