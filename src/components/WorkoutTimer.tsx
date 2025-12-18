@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface WorkoutTimerProps {
@@ -32,7 +32,7 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ isActive, onToggle, onReset
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
-  const handleReset = () => {
+  const handleFinish = () => {
     onReset();
     setSeconds(0);
     onTimeUpdate?.(0);
@@ -48,12 +48,12 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ isActive, onToggle, onReset
           {formatTime(seconds)}
         </span>
       </div>
-      <div className="flex justify-center gap-3">
+      <div className="flex flex-col gap-3">
         <Button
           onClick={onToggle}
           variant={isActive ? 'secondary' : 'default'}
           size="lg"
-          className="gap-2 min-w-[120px]"
+          className="gap-2 w-full"
         >
           {isActive ? (
             <>
@@ -63,14 +63,27 @@ const WorkoutTimer: React.FC<WorkoutTimerProps> = ({ isActive, onToggle, onReset
           ) : (
             <>
               <Play className="w-5 h-5" />
-              Start
+              Start Workout
             </>
           )}
         </Button>
-        <Button onClick={handleReset} variant="outline" size="lg">
-          <RotateCcw className="w-5 h-5" />
-        </Button>
+        {seconds > 0 && (
+          <Button 
+            onClick={handleFinish} 
+            variant="default" 
+            size="lg" 
+            className="gap-2 w-full bg-success hover:bg-success/90 text-success-foreground"
+          >
+            <CheckCircle className="w-5 h-5" />
+            Finish & Save Workout
+          </Button>
+        )}
       </div>
+      {seconds === 0 && (
+        <p className="text-xs text-muted-foreground text-center mt-3">
+          Start the timer to track your workout
+        </p>
+      )}
     </div>
   );
 };
