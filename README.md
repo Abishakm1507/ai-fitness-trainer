@@ -1,73 +1,68 @@
-# Welcome to your Lovable project
+# 🏋️‍♂️ AI Fitness Trainer
 
-## Project info
+AI Fitness Trainer is a real-time, AI-powered fitness coaching web application that uses computer vision to analyze exercise form, automatically count repetitions, and provide instant voice feedback—just like having a personal trainer watching you live. The platform works using only a device camera, with no wearables required, and helps users track goals and monitor progress over time.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+🌐 **Live Demo:** https://ai-fitness-trainer-beta.vercel.app/  
+📂 **GitHub Repo:** https://github.com/Abishakm1507/ai-fitness-trainer
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🚀 Features
 
-**Use Lovable**
+- 🎥 Real-time exercise tracking using a camera  
+- 🤖 AI-based posture and form analysis  
+- 🔢 Automatic repetition counting  
+- 🗣️ Live voice feedback for form correction  
+- ⏱️ Workout duration tracking  
+- 🎯 Goal setting (weekly targets & streaks)  
+- 📊 Workout history and progress visualization  
+- 🔐 Secure authentication and user data storage  
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🧠 How It Works
 
-**Use your preferred IDE**
+The application uses **TensorFlow’s MoveNet pose-detection model** to detect key body joints from the live camera feed. Each frame produces 17 body keypoints:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+\[
+P = \{(x_i, y_i)\}_{i=1}^{17}
+\]
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+These keypoints are analyzed over time to:
+- Detect exercise movements
+- Count repetitions
+- Evaluate posture and alignment
+- Trigger voice feedback when form deviates
 
-Follow these steps:
+To improve stability, temporal smoothing is applied to reduce noise in real-time pose detection.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🛠️ Built With
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Languages:** TypeScript, JavaScript  
+- **Frontend:** React, Vite  
+- **UI & Styling:** Tailwind CSS, shadcn-ui  
+- **Backend & Database:** Supabase  
+- **AI / ML:** TensorFlow.js, MoveNet pose-detection model  
+- **APIs:** Web Camera API, Web Speech API  
+- **Deployment:** Vercel  
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+---
+
+## 📦 Installation & Setup
+
+Follow these steps to run the project locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/Abishakm1507/ai-fitness-trainer
+
+# Navigate to the project directory
+cd ai-fitness-trainer
+
+# Install dependencies
+npm install
+
+# Start the development server
 npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
